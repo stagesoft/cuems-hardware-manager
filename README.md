@@ -1,2 +1,2 @@
-# cuems_hwdiscovery
-Cuems hardware discovery process to setup the Cuems system
+# cuems-hardware-manager
+Hardware and outputs management and discovery for the CueMS system
