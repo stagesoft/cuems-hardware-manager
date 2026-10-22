@@ -5,9 +5,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # `cuems-hardware-manager` — bootstrap and constitution
 
-**Status (2026-10-22): ready to run §2.** §1 is done. §3 is the context block for every
-`/speckit.specify` and `/speckit.plan` in this repository; §4 sketches the first feature.
-Structure follows the siblings' runnable flows (`cuems-nodeconf` `specs/planning/00-runnable-flow.md`).
+**Status (2026-10-22): §1 and §2 done; next is §4 (`/speckit.specify` for feature 001).** The
+constitution is ratified at 1.0.0 and `CLAUDE.md` agrees with it. §3 is the context block for every
+`/speckit.specify` and `/speckit.plan` in this repository. One item of §5 is still open: the
+`cuems-RELATIONS` index row. Structure follows the siblings' runnable flows (`cuems-nodeconf`
+`specs/planning/00-runnable-flow.md`).
 
 **Repository:** `/disk/Projects/StageLab/cuems-hardware-manager`
 
@@ -17,29 +19,40 @@ Structure follows the siblings' runnable flows (`cuems-nodeconf` `specs/planning
 
 | | |
 |---|---|
-| Branch | `main` @ `7b240a9` (`chore(specs): Add speckit and proper structure for the code`) |
+| Branches | `main` @ `82efbd9` (spec-kit scaffold, re-signed; one commit ahead of `origin/main` `0e325ff`, not pushed). `docs/architecture-planning`, carrying this planning set (`b5ce86d`) and the constitution commit on top of it; not merged, not pushed |
+| Git identity | `Adrià Masip <adria@stagelab.coop>`, GPG key `B25EB0EDCB9F13C2`, `commit.gpgsign true`, in the local config, the same as the siblings. Every commit on both branches since `0e325ff` is signed (`G`) |
 | Spec-kit | **present**, 1.2.2, `--integration claude --script sh`, sequential numbering |
-| Constitution | **template only** — `.specify/memory/constitution.md` still has `[PROJECT_NAME]` placeholders |
+| Constitution | **ratified 1.0.0** (2026-10-22): eight principles, Operating Constraints, Direction of Travel, Testing Gate, Governance. Its Sync Impact Report was removed before committing; the one deliberate departure from the §2 prompt is recorded in §2 below |
+| `CLAUDE.md` | **corrected** to agree with the constitution: name, role, two units, boundaries, absorption, working rules, field notes (D-12, this repository's half) |
 | Existing features | none → the first becomes `001-…` |
 | Code | `src/cuemshardwaremanager/CuemsHwDiscovery.py` — **empty** (0 bytes). The 299-line prototype is in history at `b09b8cc`; it imports the deleted `CuemsNode`/`XmlReaderWriter` and does not run on the refactor line |
 | Tests, packaging, CI | none |
-| `CLAUDE.md` | names the repository `cuems_hwdiscovery` and calls it a *"support/tooling repo"* — stale (D-12) |
-| Upstream | `cuems-nodeconf`'s notice withdrawing the obligation is **open**; the draft acceptance is `05-ownership-notice-draft.md` |
+| Planning | `00`–`06` written. Decided: D-1 (two units, shipped here), D-2 (own transport, port in `settings.xml`), D-13 (first feature), the stage boundary, the twin's sole writer, and the machinery that belongs here. See `04-open-decisions.md` |
+| Upstream | `cuems-nodeconf`'s notice withdrawing the obligation is **open**. The draft acceptance, `05-ownership-notice-draft.md`, is **not sent**. The `cuems-RELATIONS` index row still says `cuems_hwdiscovery` |
 
 ---
 
 ## 1. Bootstrap — done
 
-`specify init --here --integration claude --script sh` was committed as `7b240a9`. Stay on a
-feature branch per feature; let spec-kit name `specs/NNN-<name>/`.
+`specify init --here --integration claude --script sh` was committed as `7b240a9`, re-signed on
+2026-10-22 as `82efbd9` with the siblings' identity. Stay on a feature branch per feature; let
+spec-kit name `specs/NNN-<name>/`.
 
 ---
 
-## 2. Constitution — write the first one
+## 2. Constitution — done (1.0.0, ratified 2026-10-22)
 
-Read this before running it: the principles are derived from **measured** facts in the siblings and
-from the architecture proposal. If the maintainer changes a decision in `04-open-decisions.md` that a
-principle relies on, edit the prompt first.
+The prompt below was run as written. The ratified text is `.specify/memory/constitution.md`.
+
+**One deliberate addition.** `cuems-gpu-pin` is listed in Direction of Travel, because it was
+decided to belong here after this prompt was written. This is the only place that addition is
+recorded: the constitution's Sync Impact Report was removed before committing.
+
+Before ratifying, two cited facts were re-measured: `cuems-engine` `35cbe78` exists, and the VC
+ships its mock and client in `tools/contract/` on `feat/contract-report`.
+
+The prompt is kept as the record of what the constitution was derived from. **Do not re-run it to
+amend the constitution.** Amendments go through the constitution's own Governance procedure.
 
 ```
 /speckit.constitution
@@ -171,6 +184,7 @@ Do NOT weaken any principle to make the first feature easier.
 CONTEXT — read before writing anything.
 
 IN THIS REPOSITORY:
+  .specify/memory/constitution.md         v1.0.0 — the eight principles every spec and plan checks
   specs/planning/01-architecture.md       six stages, two services, data model, contracts, safety
   specs/planning/02-hardware-classes.md   per class: sources, identity keys, twin vs agreement vs setup
   specs/planning/03-ecosystem-seams.md    ownership, absorption candidates, gates
@@ -214,8 +228,9 @@ SETTLED — do not reopen without the maintainer:
   - This repository owns the probe, the twin, the catalogue, the agreement and the setup.
     cuems-nodeconf reads and writes no hardware data (withdrawn 2026-10-21).
   - cuems-utils owns every schema, model and accessor; this repository uses public paths only.
-  - cuems-generate-display-conf, cuems-ola-profile and jack-alsa-bridges.service belong to THIS
-    repository (2026-10-22); the generator stays the VC's ExecStartPre via a drop-in shipped here.
+  - cuems-generate-display-conf, cuems-ola-profile, jack-alsa-bridges.service and cuems-gpu-pin
+    belong to THIS repository (2026-10-22); the generator stays the VC's ExecStartPre via a
+    drop-in shipped here.
     The VC owns /run/cuems/display.conf at run time and owns the display.conf format.
   - hardware_outputs.xml is per node, describes only that node, and is joined to network_map.xml
     by uuid only.
@@ -277,22 +292,60 @@ WHAT MUST BE TRUE WHEN DONE:
 - Runs as the cuems user; exit status distinguishes "twin built" from "twin built with degraded
   sources" from "could not run".
 
-WHAT IT DOES NOT DO: persist hardware_outputs.xml or any file (that waits for the upstream schema);
-serve a node API or send anything to the controller; run as a daemon; change any configuration.
+FIELD NOTES THIS FEATURE MUST SETTLE (CLAUDE.md "Field notes / gotchas"; 06-machinery-inventory.md):
+- OLA rogue olad (06 finding 13). libola auto-starts its own olad whenever nothing listens on
+  :9010. A read-only DMX probe that connects naively would START a rogue olad as cuems and break
+  DMX on the host. The probe MUST check :9010 before connecting, or use a client that cannot
+  auto-start, and a fixture-backed test must prove no olad is spawned. Identity follows OLA's own
+  key: the interface serial (/etc/ola/ola-port.conf, 13-<SERIAL>-O-<port>). Eurolite MK2 dongles
+  show stock FT232R descriptors and are distinguishable by serial only.
+- canvas_region read as pixels (06 finding 3). For id continuity this feature reads
+  default_mappings.xml. It MUST interpret canvas_region as the schema defines it (normalised
+  [0, 1], a UI hint), never as pixels, and it MUST report, as a diagnostic in the JSON, any value
+  that would make cuems-generate-display-conf raise in the VC's ExecStartPre. The fix itself
+  belongs to the video setup feature, or to cuems-common earlier; not here.
+- The VC's display.conf "Phase A" (06 finding 10). The video fallback reads display.conf but never
+  assumes which file the VC used. It records the VC's get_state config_source when the socket
+  answers, and the path it actually read otherwise (/run/cuems/display.conf, the operator override
+  /etc/cuems/display.conf, or the VC's XDG fallback). Who GENERATES display.conf is not this
+  feature's question. It is recorded as an open item for the video setup feature, to agree with
+  the VC team.
+- The dead hw_discovery chain (06 finding 2). This feature serves no API and does not answer
+  /tmp/hwdiscovery.ipc. The spec states that explicitly, so that nobody wires the CLI into that
+  socket early. Reuse or retirement is decided under D-5.
+
+WHEN THIS FEATURE IS DONE, CLAUDE.md "Field notes / gotchas" is updated: each of the four entries
+above is either resolved (and says how), or narrowed to what is still open, with a pointer to the
+feature that will close it.
 ```
 
-Then `/speckit.clarify`. Force two questions:
+Then `/speckit.clarify`. Force four questions:
 - **What is the stable key for a DMX interface that reports no serial**, and what does the probe do
   when two identical ones are attached?
 - **Which of the twin's JSON fields are identity, and which are observation?** The persistence
   feature will need to tell "the same port, re-observed" from "a different port", so the split has
   to be explicit in the model now.
+- **How does the DMX probe guarantee it never auto-starts `olad`?** A port check before
+  connecting, or a client built without auto-start? And what is reported when `olad` is down?
+- **Where do diagnostics live in the JSON?** The `canvas_region` hazard, a host with zero video
+  connectors that should have some, OLA down: inside the twin, or beside it? Diagnostics are
+  observations about the host, not part of its identity, and the answer shapes the future schema.
+
+Field notes recorded in 06 that this feature covers without a separate question:
+- **GPU identity** (finding 14) is recorded on the video device, so `cuems-gpu-pin` can key on it
+  later.
+- **NDI** (finding 11): the model leaves room for network video ports. They are not probed in 001.
+- **Fixtures** are checked against `cuems-fleet`'s per-site records (finding 12).
 
 ---
 
 ## 5. Exit criteria for this step
 
-`.specify/memory/constitution.md` ratified at 1.0.0 with no placeholders left; its principles trace
-to §2; `CLAUDE.md` and the `cuems-RELATIONS` index row corrected to `cuems-hardware-manager` (D-12);
-the maintainer's rulings so far (D-1, D-2, D-13, the stage boundary and the twin writer, all
-2026-10-22) are reflected in the ratified text.
+| Criterion | State (2026-10-22) |
+|---|---|
+| `.specify/memory/constitution.md` ratified at 1.0.0, no placeholders left | **Done** |
+| Its principles trace to §2 | **Done**. The one addition (`cuems-gpu-pin`) is recorded in §2 |
+| The maintainer's rulings so far are reflected (D-1, D-2, D-13, stage boundary, twin writer, machinery) | **Done** |
+| `CLAUDE.md` corrected to `cuems-hardware-manager` and agrees with the constitution (D-12, this repository) | **Done** |
+| `cuems-RELATIONS` index row corrected (D-12, the other half) | **Open**. It still says `cuems_hwdiscovery` under Ops/provisioning; it should say `cuems-hardware-manager` under Core components. This is a change in that repository |
+| Committed, signed | **Done** on `docs/architecture-planning` (constitution, `CLAUDE.md`, this file, planning README) |

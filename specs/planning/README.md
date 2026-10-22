@@ -18,7 +18,7 @@ and keep it in place, because sibling repositories may link to it by path.
 | [`03-ecosystem-seams.md`](03-ecosystem-seams.md) | Proposal | Touching anything a sibling owns: the ownership table, absorption candidates from `cuems-common`, gates |
 | [`04-open-decisions.md`](04-open-decisions.md) | **Partly decided** (D-1, D-2, D-13, stage boundary, twin writer — 2026-10-22) | Before a `/speckit.specify`: the decided table, D-3…D-13 with recommendations, and the proposed feature split |
 | [`06-machinery-inventory.md`](06-machinery-inventory.md) | **Measured** 2026-10-22 | Before any setup feature or absorption: every hardware piece in the siblings (shipped or not), headline defects, and the single-source-of-truth table |
-| [`00-runnable-flow.md`](00-runnable-flow.md) | **Ready to run §2** | Running `/speckit.constitution`, and for the context block every spec and plan pastes |
+| [`00-runnable-flow.md`](00-runnable-flow.md) | **§1–§2 done** (constitution 1.0.0 ratified 2026-10-22); next is §4 | For the context block every spec and plan pastes, the feature 001 draft, and the record of what the constitution was derived from |
 | [`05-ownership-notice-draft.md`](05-ownership-notice-draft.md) | Draft, not sent | Once the maintainer confirms ownership: the notice to `cuems-utils` that closes `cuems-nodeconf`'s open withdrawal |
 
 ## Where this came from
