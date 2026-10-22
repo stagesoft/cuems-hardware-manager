@@ -47,12 +47,20 @@ Rules the probe must respect, from the contract and the field:
 
 ## 2. Audio outputs and inputs
 
+**Scope, maintainer ruling 2026-10-22.** Every kind of audio output, and the matching inputs, MUST be discoverable in the twin and selectable in the agreement, with the services restarted at setup where needed. The kinds are:
+- HDMI/DP-driven audio;
+- external USB DSPs and interfaces;
+- multichannel audio cards;
+- the main L/R outputs (onboard analog).
+
+All of it is this repository's responsibility, discovery through restart, and every audio spec is directed by it. JACK relations (how a device appears in the JACK graph) are still to be researched and agreed with the team (D-11). That covers discovering them, not owning the selection.
+
 | | |
 |---|---|
 | **Sources** | ALSA: `/proc/asound/cards`, `/sys/class/sound/*` (works with JACK down). DRM ELD / connector state for HDMI audio (the connector ↔ CRTC pipe ↔ HDA device mapping `cuems-hdmi-audio-map` computes). USB descriptors for USB interfaces. JACK, read-only, for which physical ports are exposed (`system:playback_N`, `usb_audio:playback_N`) |
-| **Identity** | HDMI/DP audio ← the **video connector** it rides on, never the ALSA device number (pipes are assigned at boot: pipe A/B/C → devices 3/7/8). USB audio ← USB vendor:product + serial, or physical port path when there is no serial. Never the ALSA card *name* (`PCH` on Intel N97/N100, `Generic` on AMD) |
+| **Identity** | HDMI/DP audio ← the **video connector** it rides on, never the ALSA device number (pipes are assigned at boot: pipe A/B/C → devices 3/7/8). USB audio, including external DSPs ← USB vendor:product + serial, or physical port path when there is no serial. Onboard analog (main L/R) and PCI(e) multichannel cards ← the controller's PCI path + the card's own stable stream/function identity. Never the ALSA card index or *name* (`PCH` on Intel N97/N100, `Generic` on AMD) |
 | **Twin records** | devices, channels per direction, which are exposed in JACK, sample rate in use |
-| **Agreement decides** | which devices join the JACK graph and how (the `multi_hdmi` slots, `zita-j2a` bridges), channel order and naming, the default output |
+| **Agreement decides** | which devices are selected, among HDMI, USB DSP/interface, multichannel card and main L/R; which join the JACK graph and how (the `multi_hdmi` slots, `zita-j2a` bridges); channel order and naming; the default output. Setup restarts the audio stack in its defined order when a selection needs it, and refuses while a show is loaded |
 | **Setup lands in** | `/etc/asound.conf` (`multi_hdmi`), `/etc/default/jack` `DAEMON_ARGS`, the `jack-alsa-bridges` arguments — today hard-coded `hw:HID,0` and `0_mixer:output_7/8 → usb_audio:playback_1/2` |
 | **Replaces today** | the audio sections of `default_mappings.xml`; the hard-coding in `jack-alsa-bridges.service`. `cuems-hdmi-audio-map`'s **knowledge** belongs in the twin; its **boot-time role** (before `jackd`) is a seam question (D-9) |
 
@@ -65,8 +73,10 @@ Rules:
   cue to `system:capture_1` and played silent (`cuems-engine` `35cbe78`).
 - Pipewire and wireplumber are masked system-wide because they race `zita-j2a` for `hw:HID`. A probe
   must not open devices in a way that recreates that race.
-- Registering a JACK client on the real-time server is not free. Prefer the least intrusive read
-  (D-11).
+- Registering a JACK client on the real-time server is not free, and even `jack_lsp` registers one.
+  How JACK is read, and whether a client may be registered outside a show at all, is **pending**
+  research and team agreement (D-11). Principle I already forbids joining the graph while a show is
+  loaded.
 
 ## 3. DMX
 
