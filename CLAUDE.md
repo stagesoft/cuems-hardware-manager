@@ -28,7 +28,7 @@ Stages 1–5 only observe and record. **Only stage 6 (setup) changes a box**, on
 
 ## Status
 
-Design phase; **no code yet**. `src/cuemshardwaremanager/CuemsHwDiscovery.py` is an empty placeholder. The pickle-over-TCP prototype is in history at `b09b8cc` and serves only as a record of *what* was probed. Start from [`specs/planning/README.md`](specs/planning/README.md). The first feature is `cuems-hw-mgr probe --json` over a `CuemsHardwareNode` class: the complete twin, read-only, no file written and nothing sent to the controller. Its draft is in [`specs/planning/00-runnable-flow.md`](specs/planning/00-runnable-flow.md) §4.
+Design phase; **no code yet**. The pickle-over-TCP prototype `CuemsHwDiscovery.py` was removed on 2026-10-23 (task T004 of the node twin feature). It was never an empty placeholder: it sat at `src/cuemshardwaremanager/` with its full content until then. It stays in history at `b09b8cc` and `82efbd9`, and serves only as a record of *what* was probed. New code builds on the siblings' `feat/xml-refactor` interfaces, never on it. Start from [`specs/planning/README.md`](specs/planning/README.md). The first feature is `cuems-hw-mgr probe --json` over a `CuemsHardwareNode` class: the complete twin, read-only, no file written and nothing sent to the controller. Its draft is in [`specs/planning/00-runnable-flow.md`](specs/planning/00-runnable-flow.md) §4.
 
 ## Working rules
 

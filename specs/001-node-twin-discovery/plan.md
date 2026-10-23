@@ -134,7 +134,7 @@ tests/
 └── report/                            # continuity, canvas hazard, display.conf provenance, provenance guard
 ```
 
-**Structure decision.** A single Python project, `src/` layout. The empty `src/cuemshardwaremanager/CuemsHwDiscovery.py` placeholder is removed. Module names follow behaviours (`probes/`, `sources/`, `report/`) rather than the later stages, so the persistence and API features can add `store/` and `api/` beside them (01 §3.1).
+**Structure decision.** A single Python project, `src/` layout. The outdated prototype `src/cuemshardwaremanager/CuemsHwDiscovery.py` is removed (T004, done). Module names follow behaviours (`probes/`, `sources/`, `report/`) rather than the later stages, so the persistence and API features can add `store/` and `api/` beside them (01 §3.1).
 
 ## Delivery notes for `/speckit-tasks`
 
@@ -149,7 +149,7 @@ tests/
   - ledger entries for the seven host checks in quickstart §2, SC-007 included;
   - a written "not verified" where host access was missing.
 - **At completion**:
-  - `CLAUDE.md` "Field notes / gotchas" updated as FR-040 lists, and `CLAUDE.md` "Status" updated (code exists, placeholder gone);
+  - `CLAUDE.md` "Field notes / gotchas" updated as FR-040 lists, and `CLAUDE.md` "Status" updated (code exists, prototype gone);
   - a D-11 note recording that 001 does not read JACK;
   - `04-open-decisions.md` D-13 marked delivered.
 - **Upstream, prepared alongside and not blocking.** A draft in `specs/upstream-reports/` for `cuems-utils`' structure pass, built from `contracts/probe-output.schema.json`. It also notes the stale two-writer annotation in `hardware_outputs.xsd`.

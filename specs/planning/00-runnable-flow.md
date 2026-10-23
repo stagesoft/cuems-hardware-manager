@@ -25,7 +25,7 @@ constitution is ratified at 1.0.0 and `CLAUDE.md` agrees with it. §3 is the con
 | Constitution | **ratified 1.0.0** (2026-10-22): eight principles, Operating Constraints, Direction of Travel, Testing Gate, Governance. Its Sync Impact Report was removed before committing; the one deliberate departure from the §2 prompt is recorded in §2 below |
 | `CLAUDE.md` | **corrected** to agree with the constitution: name, role, two units, boundaries, absorption, working rules, field notes (D-12, this repository's half) |
 | Existing features | none → the first becomes `001-…` |
-| Code | `src/cuemshardwaremanager/CuemsHwDiscovery.py` — **empty** (0 bytes). The 299-line prototype is in history at `b09b8cc`; it imports the deleted `CuemsNode`/`XmlReaderWriter` and does not run on the refactor line |
+| Code | **Corrected 2026-10-23:** `src/cuemshardwaremanager/CuemsHwDiscovery.py` was **not** empty. It was the full prototype (10,763 bytes, 296 lines), moved there intact by `82efbd9`. It imports the deleted `CuemsNode`/`XmlReaderWriter` and does not run on the refactor line. It was removed on 2026-10-23 (node twin feature, T004) and stays in history at `b09b8cc` and `82efbd9` |
 | Tests, packaging, CI | none |
 | Planning | `00`–`06` written. Decided: D-1 (two units, shipped here), D-2 (own transport, port in `settings.xml`), D-13 (first feature), the stage boundary, the twin's sole writer, and the machinery that belongs here. See `04-open-decisions.md` |
 | Upstream | `cuems-nodeconf`'s notice withdrawing the obligation is **open**. The draft acceptance, `05-ownership-notice-draft.md`, is **not sent**. The `cuems-RELATIONS` index row still says `cuems_hwdiscovery` |
@@ -236,7 +236,8 @@ SETTLED — do not reopen without the maintainer:
     by uuid only.
   - Never auto-stop a running project: setup refuses while a show is loaded.
 
-MEASURED STARTING STATE (2026-10-22): no code (CuemsHwDiscovery.py is empty); no tests; no
+MEASURED STARTING STATE (2026-10-22, corrected 2026-10-23): no code (the outdated prototype
+CuemsHwDiscovery.py was removed; it was never empty); no tests; no
 packaging. hardware_outputs.xsd cannot carry the twin; ConfigManager refuses HARDWARE_OUTPUTS by
 design; default_mappings.xml is still the node inventory that cuems-generate-display-conf and the
 engine read.

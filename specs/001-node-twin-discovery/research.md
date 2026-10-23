@@ -274,7 +274,7 @@ This is recorded in the plan's Complexity Tracking, because it touches a `cuems-
 - **In scope.** A `pyproject.toml` (setuptools, `src/` layout) with the console script `cuems-hw-mgr = cuemshardwaremanager.cli:main`. The runtime dependencies `pynng` and `cuemsutils` are declared and not bundled (Operating Constraints). `python3-ola` is declared as a system dependency (R10) and documented in `README.md` until the Debian package carries it.
 - **Out of scope.** The Debian package and the systemd units arrive with the units feature.
 - **On hosts, for the ledger.** Nothing runs from a checkout on a host. Ledger checks capture with `dev/scripts/capture-readonly.sh` as `cuems-admin` (R15), and run `cuems-hw-mgr probe --json --fixture <dir>` on the workstation against the imported tree (quickstart §2). Hosts and their shared venv are never touched.
-- **The empty placeholder `CuemsHwDiscovery.py` is removed.** The prototype stays in history at `b09b8cc`.
+- **The outdated prototype `CuemsHwDiscovery.py` is removed (T004, done 2026-10-23).** It was the full 296-line pickle-over-TCP prototype, not an empty placeholder as the planning docs said, and it cannot import on the `feat/xml-refactor` line. It stays in history at `b09b8cc` and `82efbd9`.
 
 **Rationale.** The shared venv makes packaging a correctness concern, so not installing into it during verification avoids the `pythonosc`-class incident.
 
