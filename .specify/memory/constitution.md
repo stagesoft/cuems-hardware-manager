@@ -1,3 +1,16 @@
+<!--
+Sync Impact Report
+- Version: 1.0.0 → 1.1.0 (MINOR). Principle VIII is materially expanded. Every design that complied with 1.0.0 still complies.
+- Modified principle: VIII. Least Privilege.
+  - Long-running services run as `cuems`, and that is unchanged.
+  - Privileged effects are now explicitly confined to root oneshot units shipped by this package. They take fixed inputs, run at boot, and are triggered only through a sudoers rule naming the exact units.
+  - `cuems-admin` is a human account, never a service identity.
+- Rationale: measured in `cuems-common` `feat/xml-refactor`, 2026-10-23. `cuems-hdmi-audio-map` and `cuems-gpu-pin` are root boot oneshots, and both now belong to this repository (Direction of Travel). Setup also has to write root- and `olad`-owned configuration and restart system units. So 1.0.0's "never root" could not hold literally. Running a daemon as root was rejected (D-14): the daemons face the network, and a root daemon with a TCP API is the largest privilege surface available.
+- Sections touched: the preamble (the two units), VIII, Operating Constraints (units and privilege rules).
+- Templates: plan-template.md, spec-template.md and tasks-template.md carry no principle text, so no change.
+- Follow-up: CLAUDE.md "Role" updated; `specs/planning/04-open-decisions.md` D-14; the 001 spec and plan notes on daemon privilege; `specs/planning/01-architecture.md` §7, where this constitution governs.
+-->
+
 # cuems-hardware-manager Constitution
 
 `cuems-hardware-manager` is the CUEMS **hardware manager**. It owns the chain
@@ -15,7 +28,7 @@ each node applies.
 
 Python 3.11, import package `cuemshardwaremanager`, shared venv `/usr/lib/cuems/`, Debian bookworm.
 The two systemd units are shipped by this package, `PartOf=cuems-node.target` and
-`PartOf=cuems-controller.target` respectively, and both run as the `cuems` user.
+`PartOf=cuems-controller.target` respectively, and both run as the `cuems` user. Setup's privileged effects run in root oneshot units shipped by this package (Principle VIII).
 
 **What it is not.** Each boundary is stated so that new code does not quietly absorb a sibling's
 responsibility; a change that crosses one is a scope violation, not a convenience:
@@ -152,16 +165,20 @@ nobody can diagnose.
 
 ### VIII. Least Privilege
 
-- **It runs as `cuems`, never root.** `cuems-nodeconf` is the ecosystem's one documented root
-  exception, and this repository does not become a second.
-- **Restarts needed by setup** go through a rule naming the exact units, the same pattern as the
-  `99-cuems` sudoers drop-in.
-- **Socket files are `0660 cuems:cuems`.** EDID serials are personal-ish data.
-- **Anything it creates that another service touches is a permissions decision**, made
-  deliberately and stated in the change that creates it.
+Privilege is split by kind of process, the way `cuems-common` already runs a host: long-running services as `cuems`; root work in boot oneshots with fixed inputs; narrow sudoers rules for exact commands.
 
-Rationale: permissions decisions are correctness. `cuems-nodeconf`'s worst recorded defect was a
-root-owned IPC socket that crash-looped the engine, but only when nodeconf won the boot race.
+- **Long-running services run as `cuems`, never root.** `cuems-hardware-node` and `cuems-hardware-controller` probe, keep the twin, serve the node API and hold the agreement as `cuems`, with supplementary groups only where a read needs them. `cuems-nodeconf` is the ecosystem's one documented root daemon, and this repository does not become a second.
+- **Privileged effects are confined to root oneshot units shipped by this package.** The pattern is `cuems-hdmi-audio-map` and `cuems-gpu-pin`, which this repository absorbs. Each such unit:
+  - reads fixed inputs only (the node's applied slice, a file `cuems` writes), never arguments from the network or the caller;
+  - does one class's rendering and that class's ordered restarts;
+  - re-checks the show lock itself and refuses while a show is loaded;
+  - is ordered at boot `Before=` the services it prepares, so a node whose daemon is dead still plays its last applied setup.
+- **The daemon reaches root only by starting those units**, through a sudoers drop-in naming each exact unit (`systemctl start cuems-hardware-apply@<class>.service`). It is the same pattern as `99-cuems-avahi`. No rule grants a shell, an arbitrary unit or an arbitrary command.
+- **`cuems-admin` is a human account.** No unit runs as it, depends on it, or uses its sudo.
+- **Socket files are `0660 cuems:cuems`.** EDID serials are personal-ish data.
+- **Anything it creates that another service touches is a permissions decision**, made deliberately and stated in the change that creates it. That includes files under `/etc/cuems`, which is `root:root 0755` on a host.
+
+Rationale: permissions decisions are correctness. `cuems-nodeconf`'s worst recorded defect was a root-owned IPC socket that crash-looped the engine, but only when nodeconf won the boot race. A daemon that faces the network must not hold root; a oneshot with fixed inputs, started by name, bounds what a compromised daemon can do to "re-apply the last agreed setup".
 
 ## Operating Constraints
 
@@ -170,7 +187,7 @@ operator agreement, and the setup that applies it. It also covers the hardware m
 renders that setup into subsystems (see Direction of Travel). The boundaries in the preamble are
 permanent; widening them requires an amendment first.
 
-**Units ship here.** This package ships its own systemd units and their privilege rules, attached
+**Units ship here.** This package ships its own systemd units, including the root apply oneshots, and their privilege rules (the sudoers drop-in naming exact units), attached
 to `cuems-common`'s targets with `PartOf=` and `WantedBy=`. `cuems-common` is being stripped of
 non-essential responsibilities, so nothing of this repository's goes there.
 
@@ -273,4 +290,4 @@ introduced against a principle MUST be justified in writing rather than assumed.
 remains the runtime development guidance for this repository and is expected to stay consistent
 with this document.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-10-22
+**Version**: 1.1.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-10-23

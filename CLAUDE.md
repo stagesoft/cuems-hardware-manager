@@ -5,7 +5,7 @@
 
 Part of the **CUEMS** ecosystem — see the [`cuems-RELATIONS`](https://github.com/stagesoft/cuems-RELATIONS) repo for the system index, architecture diagram, and protocol/port map.
 
-**Governance:** [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (v1.0.0, ratified 2026-10-22). Where this file and the constitution disagree, the constitution governs. Fix this file.
+**Governance:** [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (v1.1.0, amended 2026-10-23). Where this file and the constitution disagree, the constitution governs. Fix this file.
 
 ## Role
 
@@ -14,7 +14,7 @@ The CUEMS **hardware manager** owns the chain *real hardware availability → di
 - **`cuems-hardware-node`** runs on every host (`PartOf=cuems-node.target`). It probes the attached hardware: video connectors and sinks, audio devices, DMX interfaces and network displays. It keeps the per-node **digital twin** and is the **sole writer** of `/etc/cuems/hardware_outputs.xml`, whose schema `cuems-utils` owns. It serves the twin to the controller, and applies its share of the operator's setup.
 - **`cuems-hardware-controller`** runs on the controller (`PartOf=cuems-controller.target`). It combines every adopted node's twin into the cluster's capabilities, holds the operator's agreement, and sends each node its share.
 
-Stages 1–5 only observe and record. **Only stage 6 (setup) changes a box**, only from an agreement the operator made, and **never while a show is loaded**: it refuses with a reason and never stops playback. Neither unit is a dependency of playback. Python 3.11, import package `cuemshardwaremanager`, shared venv `/usr/lib/cuems/`, runs as `cuems` and never as root.
+Stages 1–5 only observe and record. **Only stage 6 (setup) changes a box**, only from an agreement the operator made, and **never while a show is loaded**: it refuses with a reason and never stops playback. Neither unit is a dependency of playback. Python 3.11, import package `cuemshardwaremanager`, shared venv `/usr/lib/cuems/`. Both units run as `cuems`, never root. Setup's privileged effects run only in root oneshot units shipped here, which the daemon starts through a sudoers rule naming the exact units (constitution VIII, D-14). `cuems-admin` is for humans only.
 
 **Not this repository's job:**
 - cue-time control (`cuems-engine`, the players);

@@ -297,11 +297,13 @@ Xinerama screens), not *how*.
 | `/run/cuems/hardware/` | node · runtime | node agent | Probe state, sockets if not in `/tmp/cuems` |
 | Renderings: `display.conf`, ALSA/JACK config, OLA patch | node · runtime / config | node agent (stage 6) | Each one replaces a hand-authored or generated file today — see [`03-ecosystem-seams.md`](03-ecosystem-seams.md) §3 |
 
-- Runs as the **`cuems`** system user (groups `video`, `render`, `audio`, `cuems`), never root.
-  `cuems-nodeconf` is the documented sole root exception in the ecosystem; this repository does not
+- Both daemons run as the **`cuems`** system user (groups `video`, `render`, `audio`, `cuems`), never
+  root. `cuems-nodeconf` is the documented sole root daemon in the ecosystem; this repository does not
   become a second one.
-- Restarting units for stage 6 goes through a narrowly scoped rule (sudoers or polkit) naming the
-  exact units, the same pattern as `cuems-common`'s `99-cuems` for Avahi.
+- **Amended 2026-10-23 (D-14, constitution 1.1.0):** stage 6's privileged rendering and restarts run
+  in root oneshot units shipped here (`cuems-hardware-apply@<class>.service`). They take fixed inputs,
+  run at boot, and are started by the daemon only through a sudoers rule naming the exact units (the
+  `99-cuems-avahi` pattern).
 - Python 3.11 in the shared venv `/usr/lib/cuems/`. The shared venv makes packaging a correctness
   concern (`cuems-power-bridge` lesson: a package must not bundle anything another CUEMS package
   ships). `pynng` is already there.
