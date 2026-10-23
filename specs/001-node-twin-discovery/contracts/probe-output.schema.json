@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stagelab.coop/cuems/hardware-manager/probe-output/1",
+  "title": "cuems-hw-mgr probe --json output, format cuems-hw-twin/1",
+  "description": "Draft shape of the node digital twin. `twin` is discovered-only and is what the persistence feature promotes to hardware_outputs.xsd. `report` is never persisted. `x-state` marks each observed field: persisted (rewritten only on change) or live (refreshed, never written). Clients must ignore fields they do not know. A port is addressed cluster-wide by (twin.uuid, port.identity.port_id); a port_id is unique per node only.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["format", "twin", "report"],
+      "properties": {
+        "format": { "const": "cuems-hw-twin/1" },
+        "twin": { "$ref": "#/$defs/node" },
+        "report": { "$ref": "#/$defs/report" }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["format", "error"],
+      "properties": {
+        "format": { "const": "cuems-hw-twin/1" },
+        "error": {
+          "type": "object",
+          "required": ["reason"],
+          "properties": { "reason": { "type": "string" }, "detail": { "type": "string" } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "presence": { "enum": ["present", "absent", "unknown"] },
+    "node": {
+      "type": "object",
+      "required": ["uuid", "devices"],
+      "additionalProperties": false,
+      "properties": {
+        "uuid": { "type": "string", "description": "From settings.xml via cuems-utils. The only node attribute." },
+        "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } }
+      }
+    },
+    "device": {
+      "type": "object",
+      "required": ["identity", "observed"],
+      "properties": {
+        "identity": {
+          "type": "object",
+          "required": ["class", "device_key", "transport", "key_strength"],
+          "properties": {
+            "class": { "type": "string", "description": "Registered probe class; data, not an enum." },
+            "device_key": { "type": "string" },
+            "transport": { "enum": ["pci", "usb", "network", "virtual"] },
+            "key_strength": { "enum": ["serial", "port_path", "bus_address", "service_name"] }
+          }
+        },
+        "observed": {
+          "type": "object",
+          "required": ["presence", "source", "ports"],
+          "properties": {
+            "vendor": { "type": ["string", "null"], "x-state": "persisted" },
+            "model": { "type": ["string", "null"], "x-state": "persisted" },
+            "serial": { "type": ["string", "null"], "x-state": "persisted" },
+            "vendor_id": { "type": ["string", "null"], "x-state": "persisted" },
+            "product_id": { "type": ["string", "null"], "x-state": "persisted" },
+            "driver": { "type": ["string", "null"], "x-state": "persisted" },
+            "kind": { "type": ["string", "null"], "x-state": "persisted", "description": "Audio: hdmi | usb | onboard | pci_multichannel." },
+            "capabilities": { "type": "object", "x-state": "persisted", "description": "Video GPU: vc_caps (VC get_caps tokens), modes_partial." },
+            "live": { "type": "object", "x-state": "live", "description": "Video GPU: config_source, driven_geometry (VC get_state; never persisted). DMX: ola_plugin, ola_running, ola_patch (OLA's current universe-port patch; operator intent held by a service, live only, never persisted)." },
+            "presence": { "$ref": "#/$defs/presence", "x-state": "live" },
+            "source": { "type": "string", "x-state": "live" },
+            "ports_known": { "type": "boolean", "x-state": "live" },
+            "ports": { "type": "array", "items": { "$ref": "#/$defs/port" } }
+          }
+        }
+      }
+    },
+    "port": {
+      "type": "object",
+      "required": ["identity", "observed"],
+      "properties": {
+        "identity": {
+          "type": "object",
+          "required": ["port_id", "direction", "key"],
+          "properties": {
+            "port_id": { "type": "string", "pattern": "^[a-z0-9_]+:(output|input):[^:]" },
+            "direction": { "enum": ["output", "input"] },
+            "key": { "type": "object", "description": "The physical key parts the id was derived from." }
+          }
+        },
+        "observed": {
+          "type": "object",
+          "required": ["presence", "source"],
+          "properties": {
+            "presence": { "$ref": "#/$defs/presence", "x-state": "live" },
+            "presence_reason": { "type": "string", "x-state": "live", "description": "Required when presence is unknown." },
+            "channels": { "type": ["integer", "null"], "x-state": "persisted" },
+            "capabilities": {
+              "type": "object",
+              "x-state": "persisted",
+              "properties": {
+                "modes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["width", "height"],
+                    "properties": {
+                      "id": { "type": ["string", "null"], "description": "VC mode id, opaque; null in the sysfs fallback." },
+                      "width": { "type": "integer" },
+                      "height": { "type": "integer" },
+                      "hz": { "type": ["number", "null"] },
+                      "interlaced": { "type": ["boolean", "null"] }
+                    }
+                  }
+                },
+                "preferred": { "type": ["string", "null"] },
+                "max_channels": { "type": ["integer", "null"] },
+                "rdm": { "type": ["boolean", "null"] }
+              }
+            },
+            "sink": {
+              "x-state": "persisted",
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": ["make", "model", "serial"],
+                  "properties": { "make": { "type": "string" }, "model": { "type": "string" }, "serial": { "type": "string" } }
+                },
+                { "type": "object", "required": ["state"], "properties": { "state": { "const": "unknown" } } }
+              ]
+            },
+            "live": {
+              "type": "object",
+              "x-state": "live",
+              "properties": {
+                "current": { "type": ["string", "null"], "description": "Video: VC mode id driven, null = not driven." },
+                "alsa_pcm": { "description": "HDMI audio: {card_id, device} or {state: unknown}." },
+                "multi_hdmi_slot": { "description": "HDMI audio: slot index in /etc/asound.conf multi_hdmi as cuems-hdmi-audio-map wrote it this boot, null if not slotted, {state: not_configured} when /etc/asound.conf is absent, or {state: unknown} when unreadable." },
+                "hw_params": { "type": ["object", "null"] },
+                "jack_exposure": {
+                  "type": "object",
+                  "required": ["state"],
+                  "properties": { "state": { "enum": ["unknown"] }, "reason": { "type": "string" } },
+                  "description": "Format /1: always unknown, pending JACK relations agreement (D-11). Later formats add values."
+                }
+              }
+            },
+            "source": { "type": "string", "x-state": "live" }
+          }
+        }
+      }
+    },
+    "report": {
+      "type": "object",
+      "required": ["sources", "degraded", "deferred", "show_lock", "diagnostics", "continuity"],
+      "properties": {
+        "sources": { "type": "object", "additionalProperties": { "type": "string" } },
+        "degraded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["class", "source", "reason", "fallback"],
+            "properties": { "class": { "type": "string" }, "source": { "type": "string" }, "reason": { "type": "string" }, "fallback": { "type": "string" } }
+          }
+        },
+        "deferred": {
+          "type": "array",
+          "items": { "type": "object", "required": ["class", "field", "reason"] }
+        },
+        "show_lock": {
+          "type": "object",
+          "required": ["active", "skipped"],
+          "properties": { "active": { "type": "boolean" }, "skipped": { "type": "array" } }
+        },
+        "display_conf": {
+          "type": "object",
+          "properties": { "path_read": { "type": ["string", "null"] } },
+          "description": "Present only when the VC did not answer; otherwise config_source is live twin state."
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "class", "subject", "detail"],
+            "properties": {
+              "code": { "enum": ["zero_video_connectors", "canvas_region_generator_hazard", "identity_unresolved", "weak_identity", "vc_state_unstable", "mappings_invalid", "sink_ambiguous"] },
+              "class": { "type": "string" },
+              "subject": { "type": "string" },
+              "detail": { "type": "string" }
+            }
+          }
+        },
+        "continuity": {
+          "type": "object",
+          "required": ["available"],
+          "properties": {
+            "available": { "type": "boolean" },
+            "reason": { "type": "string" },
+            "matched": { "type": "array", "items": { "$ref": "#/$defs/legacy" } },
+            "unmatched_entries": { "type": "array", "items": { "$ref": "#/$defs/legacy" } },
+            "unmatched_ports": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "legacy": {
+      "type": "object",
+      "required": ["class", "direction", "legacy_id", "legacy_name", "legacy_reference"],
+      "properties": {
+        "port_id": { "type": "string" },
+        "class": { "type": "string" },
+        "direction": { "enum": ["output", "input"] },
+        "legacy_id": { "type": "integer" },
+        "legacy_name": { "type": "string" },
+        "legacy_reference": { "type": "string", "description": "<node uuid>_<legacy_name>, as projects reference it." },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}
