@@ -16,7 +16,9 @@ Every script here:
 - starts, stops and signals **no service**;
 - prints **no serials and no EDID contents**: only paths, sizes, flags and errors.
 
-Run one only when the maintainer asks for it. The same procedure is used for the fixture capture at the hardware gate (`specs/001-node-twin-discovery/tasks.md`, task T073).
+**The one exception is `scripts/capture-readonly.sh`**, which is not yet written (task T071). Its `files` and `ola` output carries raw EDID and USB serials, because fixtures need the real bytes in order to pseudonymise them consistently. That output must only ever be piped straight into `cuems-hw-mgr fixture-import`, which pseudonymises it before writing anything. It is never redirected into `dev/data/` or any other file.
+
+Run one only when the maintainer asks for it. The same procedure is used for the fixture capture at the hardware gate (`specs/001-node-twin-discovery/tasks.md`, task T073) and for the hardware-verification ledger checks (`specs/001-node-twin-discovery/quickstart.md` §2). Those run the probe on the workstation against a fresh capture, never on the host.
 
 ## Procedure
 

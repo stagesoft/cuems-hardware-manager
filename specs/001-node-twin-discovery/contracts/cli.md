@@ -35,7 +35,12 @@ WARNING degraded class=<class> source=<source> reason=<reason> fallback=<fallbac
 
 **Environment:**
 - `CUEMS_CONF_PATH` is honoured through `cuems-utils` (where `settings.xml` is read from).
-- The `HostView` root is `/` and is not configurable on the command line.
+- The `HostView` root is `/`, except with `--fixture <dir>` (below).
+
+### Development options (not part of the contract)
+
+- `probe --fixture <dir>` runs the probe on a captured or constructed fixture tree instead of the host. It is used for ledger checks on production-testing machines (quickstart §2) and for tests.
+- `fixture-import` (below) is a workstation tool. It ships in the package, but it is not for use on hosts.
 
 ## Fixture capture (FR-037, research R15)
 
@@ -57,9 +62,9 @@ ssh -i ~/.ssh/cuems-org cuems-admin@<host> 'bash -s -- manifest' < dev/scripts/c
 
 It writes nothing, opens no device node, spawns no `olad` (R10's two layers) and needs no checkout.
 
-**On the workstation: `cuems-hw-mgr fixture-import <model> --ola <file> --manifest <file>`**, which reads the `files` tar on stdin:
+**On the workstation: `cuems-hw-mgr fixture-import <model> --ola <file> --manifest <file> [--out <dir>]`**, which reads the `files` tar on stdin:
 - It requires `CUEMS_FIXTURE_SALT`, which is never committed, and pseudonymises EDID and USB serials, OLA unique ids and `ola-port.conf` keys **before writing**.
-- It writes `tests/fixtures/<model>/{MANIFEST, root/, services/ola/*.json}`, then runs `probe` on the tree to write `expected.json` for hand review.
+- It writes `tests/fixtures/<model>/{MANIFEST, root/, services/ola/*.json}`, or the same tree under `--out <dir>` for ledger scratch use, then runs `probe` on the tree to write `expected.json` for hand review.
 - Exit codes: `0` imported; `1` refused (no salt, target not empty, a real serial survived pseudonymisation); `2` usage.
 
 VC replies come from the VC's mock until a v1 VC is deployed (`services/vc/*.json`).

@@ -33,25 +33,29 @@ What the suite must show, and where:
 
 ## 2. On a real host (hardware-verification ledger)
 
-Run over ssh as `cuems-admin`, with no sudo and without installing anything into the shared venv. Every source is readable this way (research, "Field measurements"). The exception is the VC socket, which needs group `cuems`, so video reports degraded with `permission` while the VC serves the contract:
+On the production-testing machines, every check runs **against `dev/scripts/capture-readonly.sh`**. That is the same `dev/` procedure as §3: ssh as `cuems-admin`, no sudo, the script on stdin, nothing copied, installed or written on the host. The probe itself runs **on the workstation**, against the captured tree, imported into a scratch directory rather than `tests/fixtures/`:
 
 ```sh
-env PYTHONPATH=/path/to/checkout/src \
-  /usr/lib/cuems/bin/python -m cuemshardwaremanager probe --json > /tmp/twin.json
-echo "exit=$?"
+H=cuems-admin@<host>; S=dev/scripts/capture-readonly.sh; K=~/.ssh/cuems-org; L=/tmp/ledger-<host>
+ssh -i $K $H 'bash -s -- manifest' < $S > $L.manifest
+ssh -i $K $H 'bash -s -- ola'      < $S > $L.ola.json
+time ssh -i $K $H 'bash -s -- files' < $S \
+  | CUEMS_FIXTURE_SALT=<kept off-repo> cuems-hw-mgr fixture-import <model> --out $L \
+      --ola $L.ola.json --manifest $L.manifest
+cuems-hw-mgr probe --json --fixture $L > $L.twin.json; echo "exit=$?"
 ```
 
-Check, and record each item in `specs/001-node-twin-discovery/hardware-verification.md`:
+Record each item in `specs/001-node-twin-discovery/hardware-verification.md`. Checks marked ⚠ change machine state. On the production-testing machines they run only with the maintainer's explicit approval for that machine; otherwise the ledger records "not verified".
 
-Checks marked ⚠ change service state. On the production-testing machines, which are reached read-only, they run only with the maintainer's explicit approval for that machine; otherwise the ledger records "not verified".
+1. **Exit code.** With OLA and audio up, expect `3` with `report.sources.video == "drm_sysfs"`. `0` needs a v1 VC, and none is deployed as of 2026-10-23, so record the `0` case as "not verified: no v1 VC deployed". Skip any "stop the VC" variant until then: today it gives the same result as not stopping it.
+2. **Every connector, audio device and DMX interface is listed.** Compare `$L.twin.json` with the host's `cuems-fleet` record: all four audio kinds where present (HDMI, USB DSP, multichannel card, main L/R).
+3. **Ids are stable.** ⚠ Reboot, capture again, and compare: `jq -S .twin` is identical. Re-plug a USB DSP or DMX dongle into the same socket, capture again: the same.
+4. **No rogue `olad`.** ⚠ Stop `olad` (with dmxplayers SIGSTOPped, per the OLA field note), run the `ola` mode, then check `ssh $H pgrep -u cuems olad` is empty. The `ola` mode carries the same two-layer guard as the probe (R10).
+5. **Show-safe.** ⚠ Load a show, and capture during playback: `report.show_lock.active == true`, no visible hitch, and no xrun in the `jackd-cuems` journal. Record N97 explicitly (SC-007).
+6. **Twice in a row.** Two consecutive captures of an unchanged host give byte-identical `$L.twin.json` (`cmp`).
+7. **Timing.** The `time` of the `files` capture bounds the host-side reads the probe would make, and the local `probe --fixture` time bounds its processing. Record both. Their sum is under 5 s (SC-006). This is a proxy, not an on-host probe run, and the ledger says so.
 
-1. **Exit code.** `0` with the VC, OLA and audio all up. This needs a v1 VC, and none is deployed as of 2026-10-23, so until then expect `3` with video from `drm_sysfs`, and record the `0` case as "not verified: no v1 VC deployed". ⚠ Then stop the VC (only when no show is loaded) and run again: expect `3`, `report.sources.video == "drm_sysfs"`, and one `WARNING degraded` line.
-2. **Every connector, audio device and DMX interface is listed.** Compare with the host's `cuems-fleet` record: all four audio kinds where present (HDMI, USB DSP, multichannel card, main L/R).
-3. **Ids are stable.** ⚠ Reboot and run again: `jq -S .twin` is identical. Re-plug a USB DSP or DMX dongle into the same socket: the same.
-4. **No rogue `olad`.** ⚠ Stop `olad` (with dmxplayers SIGSTOPped, per the OLA field note), run the probe, then check that `pgrep -u cuems olad` is empty.
-5. **Show-safe.** Load a show and run the probe during playback: `report.show_lock.active == true`, no visible hitch, and no xrun in the `jackd-cuems` journal. Record N97 explicitly (SC-007).
-6. **Twice in a row** gives byte-identical output (`cmp`).
-7. **Timing.** `time` the full run: under 5 s with every source up (SC-006).
+Afterwards, delete `$L*`: it holds the twin of a production host.
 
 ## 3. Capturing a fixture set
 

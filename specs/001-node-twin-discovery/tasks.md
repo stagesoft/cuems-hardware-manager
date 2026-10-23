@@ -41,7 +41,7 @@ Research and plan sections are cited as R1–R19 and §n of `data-model.md`.
 
 - [ ] T001 Re-measure the VC contract. Diff the scratch copy used in research against `cuems-videocomposer` `feat/contract-report` `docs/contract-v1.md`, and copy the VC mock's replies from `tools/contract/` as the reference. Also record the VC unit's `User=`, which fixes the home directory for the XDG `display.conf` fallback. Record the result in `specs/001-node-twin-discovery/research.md` under R3 ("Re-measured"); a mismatch amends R3 before T030.
 - [ ] T002 [P] Re-measure whether `cuemsutils` `ConfigManager(config_dir, load_all=False)` exposes `node_uuid`, `show_lock_file` and `node_mappings`, and whether `node_mappings` resolves `default_mappings.xml` with no project loaded. Measure in `../cuems-utils` `src/cuemsutils/tools/ConfigManager.py` and `ConfigBase.py`. Record the answer under R2 in `specs/001-node-twin-discovery/research.md`. If there is no public path, draft `specs/upstream-reports/cuems-utils-default-mappings-public-path.md` (never a private read).
-- [ ] T003 [P] Re-measure OLA. Read the CUEMS OLA fork's `python/ola/OlaClient.py` and confirm it has no spawn or auto-start path. Find where `python3-ola` installs on a node, and whether `/usr/lib/cuems/bin/python -c "import ola"` succeeds. Record under R10 in `specs/001-node-twin-discovery/research.md`. `python3-ola` is a declared dependency. If the shared venv cannot import it, record the packaging route to take (site-packages policy or a `.pth`) before T034 starts.
+- [ ] T003 [P] Re-measure OLA. Read the CUEMS OLA fork's `python/ola/OlaClient.py` and confirm it has no spawn or auto-start path. Record under R10 in `specs/001-node-twin-discovery/research.md`. Where `python3-ola` installs, and that the shared venv imports it, are already measured (research, "Field measurements"), so only the spawn-path read is left.
 - [ ] T004 Remove the empty placeholder `src/cuemshardwaremanager/CuemsHwDiscovery.py`. The prototype stays in history at `b09b8cc`.
 - [ ] T005 Create `pyproject.toml`, and add a "Requirements" section to `README.md` declaring the system dependency `python3-ola`, which is required whether or not DMX hardware is present (R10; it carries over to the Debian `Depends:` when packaging lands):
   - setuptools, `src/` layout, `requires-python = ">=3.11"`;
@@ -184,7 +184,8 @@ Research and plan sections are cited as R1–R19 and §n of `data-model.md`.
   - `jack_exposure` always the deferred value, with a `report.deferred` entry and no JACK access (FR-018a).
 - [ ] T037 [US1] Implement the DMX probe in `src/cuemshardwaremanager/probes/dmx.py` (`cls = "dmx"`, `requires = ()`): from OLA when both layers pass, with device key `serial-<SERIAL>` and ports `port<N>` (R9). Put OLA's current universe ↔ port patch (`FetchUniverses`) in `observed.live.ola_patch` as live state only, never persisted (FR-008). Set `report.sources["dmx"] = "ola_rpc"`.
 - [ ] T038 [US1] Implement `src/cuemshardwaremanager/cli.py`:
-  - argparse `probe [--json]` and `fixture-import <model>`; `fixture-import` is wired to T071;
+  - argparse `probe [--json] [--fixture <dir>]` and `fixture-import <model> [--out <dir>]`; `fixture-import` is wired to T071;
+  - `--fixture` runs the probe on `HostView.from_fixture(<dir>)` instead of `/`, for ledger checks on captured hosts (quickstart §2). It is a development option, like `fixture-import` (contracts/cli.md);
   - build `HostView.live()`, run `CuemsHardwareNode`, print the JSON on stdout;
   - exit codes `0` / `3` / `1` / `2` per contracts/cli.md;
   - a human summary without `--json`;
@@ -336,19 +337,20 @@ Research and plan sections are cited as R1–R19 and §n of `data-model.md`.
   - **`capture-readonly.sh`**:
     - passes `bash -n` and `shellcheck` where available;
     - with a fake root, `files` emits a tar whose members are all under `root/`;
-    - it contains no write redirection outside `/dev/null`, and no `sudo`, `systemctl`, `kill`, `ola_*` or `/dev/` opens.
+    - it contains no write redirection outside `/dev/null`, and no `sudo`, `systemctl`, `kill`, `ola_*` or `/dev/` opens;
+    - **its `ola` mode agrees with the probe:** run against a fake `ola` module, its JSON loads through `HostView.from_fixture`'s recorded OLA client and gives the same DMX devices as the recorded replies T029 uses. That keeps the two guarded OLA reads (`sources/ola_rpc.py` and the script's inline Python) from drifting.
 - [ ] T071 Implement the two halves of capture (contracts/cli.md "Fixture capture", R15):
   - **`dev/scripts/capture-readonly.sh`**, with SPDX header and a usage line, following the `dev/README.md` rules. Modes:
     - `files`: a tar to stdout of the path list, which also covers `/proc/<pid>/cmdline` for `jackd` and `zita-j2a` and `/etc/default/jack`, for the later JACK research only (R17);
     - `ola`: inline Python via `/usr/lib/cuems/bin/python -I -B`, behind the two-layer `:9010` guard;
     - `manifest`: DMI fields, the date, package versions, show-lock state.
-  - **`src/cuemshardwaremanager/fixture_import.py`** and the `fixture-import` sub-command in `src/cuemshardwaremanager/cli.py`. It pseudonymises in memory, writes the fixture tree, and runs `probe` on it for `expected.json`.
+  - **`src/cuemshardwaremanager/fixture_import.py`** and the `fixture-import` sub-command in `src/cuemshardwaremanager/cli.py`. It pseudonymises in memory, writes the fixture tree (`tests/fixtures/<model>/`, or `--out <dir>` for ledger scratch use), and runs `probe` on it for `expected.json`.
   - Add the script to `dev/README.md`'s table. Make T070 pass.
 - [ ] T072 Create the ledger `specs/001-node-twin-discovery/hardware-verification.md`, with one section per host model (N97, N100, i3-1215U, FP530) and the seven checks of quickstart §2. Each check is recorded as verified (date, host, result) or "not verified" (reason).
 - [ ] T073 **⛔ STOP: implementation pauses here until the maintainer specifically requests it.** Then, for each production-testing machine, run `dev/scripts/capture-readonly.sh` with the `dev/` procedure. Connect as `cuems-admin` with no sudo, using `ssh … 'bash -s -- <mode>' < dev/scripts/capture-readonly.sh`, with nothing copied, installed, written or restarted on the machine. Pipe the result into `cuems-hw-mgr fixture-import <model>` locally, into `tests/fixtures/n97/`, `tests/fixtures/n100/`, `tests/fixtures/i3-1215u/` and `tests/fixtures/fp530/` (the model comes from the manifest's DMI fields). If the information needed changes, change the script in `dev/scripts/`, not the command. Hand-review each `expected.json` against the host's `cuems-fleet` `nodes.yaml` / `devices.yaml` / `dmx.yaml` without copying them, and record each comparison in the ledger (SC-001).
   - This is a **blocking gate**: the feature is not done without these captures, and there is no "not verified" escape.
   - Afterwards, decide from the retrieved configurations whether FR-035 can be re-widened to per-class expectations, and record the decision in `specs/001-node-twin-discovery/spec.md`.
-- [ ] T074 On a real N97 during playback, run the quickstart §2 show-safety check and record any hitch or xrun in the ledger (SC-007). This needs host access; if it is missing, write "not verified" in the ledger.
+- [ ] T074 On a real N97 during playback, run the quickstart §2 show-safety check (⚠: loading a show changes machine state, so it needs the maintainer's explicit approval for that machine). Capture with `dev/scripts/capture-readonly.sh`, and record any hitch or xrun in the ledger (SC-007). Without approval or host access, write "not verified" in the ledger.
 
 ---
 

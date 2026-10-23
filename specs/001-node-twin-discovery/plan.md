@@ -42,7 +42,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 | **Constraints** | Never disturbs a show: no DRM master or DRM open, no JACK, no OLA writes, no device-node opens, no subprocesses, no writes. Show-lock mode suppresses re-reads. Runs as `cuems` and refuses root. Deterministic output |
 | **Scale/Scope** | One host per run: ~1–3 GPUs, ≤ 8 connectors, ≤ 10 ALSA cards, ≤ 4 DMX interfaces. Three per-class probes plus the report steps |
 
-There are no NEEDS CLARIFICATION items left. Research resolved every unknown, and the items it could not measure here are listed as `T0` re-measurements:
+There are no NEEDS CLARIFICATION items left. Research resolved every unknown, and the items it could not measure here are listed as re-measurements in tasks T001 to T003:
 - the VC contract against `feat/contract-report`;
 - `ConfigManager.node_mappings` without a project loaded;
 - `python3-ola` on a node, and its import from the venv.
@@ -61,7 +61,7 @@ There are no NEEDS CLARIFICATION items left. Research resolved every unknown, an
 | **VI. A class is data** | Probes are discovered from a package, ordered by declared `requires`. A test-only class is added through `register()` (SC-009) | PASS |
 | **VII. Degraded is normal** | Every fallback has a named trigger, a report entry and one log line (R14). The deliberate JACK deferral is not degradation | PASS |
 | **VIII. Least privilege** | Refuses root (R19). Constitution 1.1.0 (D-14) confines privileged effects to root apply oneshots started by exact unit name. 001 ships neither daemon nor oneshot, so nothing here needs privilege. Creates no file or socket. Fixtures pseudonymise EDID and USB serials with an off-repo salt (R15) | PASS |
-| **Operating Constraints** | Bundles nothing another package ships (no OLA `.proto` copy; `pynng`/`cuemsutils` are declared, not vendored). Verification runs via `PYTHONPATH`, never installing into the shared venv (R18). SPDX headers everywhere. Comments name documents and behaviours, never feature numbers | PASS |
+| **Operating Constraints** | Bundles nothing another package ships (no OLA `.proto` copy; `pynng`/`cuemsutils` are declared, not vendored). Host verification runs through `dev/scripts/capture-readonly.sh` plus a local `probe --fixture`. Nothing is installed, copied or written on hosts, and the shared venv is never touched (R15, R18). SPDX headers everywhere. Comments name documents and behaviours, never feature numbers | PASS |
 | **Testing gate** | Fixture-based CI, identity property tests, test-first for parsing and identity. Hardware ledger `hardware-verification.md`. **Blocking gate**: the feature is not done until *recorded* captures exist from all three host models. They are taken read-only over ssh from the production-testing machines, on a specific request at a planned implementation stop (T073). Only host *behaviour* checks may read "not verified" in the ledger | PASS, with a blocking gate |
 
 **Post-design re-check (after Phase 1):** unchanged. The design introduces no new principle exposure; the only exception is the R16 check, still justified below.
@@ -138,10 +138,10 @@ tests/
 
 ## Delivery notes for `/speckit-tasks`
 
-- **T0, re-measure before coding.**
+- **T001 to T003, re-measure before coding.**
   - The VC contract text and mock replies on `feat/contract-report`.
   - `ConfigManager.node_mappings` resolving `default_mappings.xml` with no project loaded.
-  - The OLA fork's `python/ola/OlaClient.py` (no spawn path), and `python3-ola`'s location on a node.
+  - The OLA fork's `python/ola/OlaClient.py` (no spawn path). `python3-ola`'s location and its import from the venv are already measured (research, "Field measurements").
   - Any mismatch becomes a research amendment or an upstream report, never a workaround.
 - **Test-first** for `edid.py`, `identity.py`, every `sources/` parser and the canvas hazard.
 - **Hardware gate**:

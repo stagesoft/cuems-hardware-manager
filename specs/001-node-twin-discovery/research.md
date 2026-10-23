@@ -35,7 +35,7 @@ A fixture set is then a directory tree (`sys/`, `proc/`, `etc/`, `run/`, `tmp/`)
 
 **Decision.**
 - **uuid and show-lock path.** `ConfigManager(config_dir, load_all=False)` gives `node_uuid` and `show_lock_file`, both public `ConfigBase` properties. When `node_uuid` is the library's published sentinel (an unprovisioned node), the probe exits **could not run** with the reason `node not provisioned`. The twin is keyed by uuid and the uuid is never minted (FR-002).
-- **Legacy mappings** (FR-032). Read through `ConfigManager`'s public mapping path (`node_mappings`, which resolves `default_mappings.xml` when no project is loaded). `T0` in the tasks re-measures that this path loads `default_mappings.xml` with no project selected. If it does not, an upstream report is filed, and continuity is reported as unavailable (`reason: no public path`). It is never read privately.
+- **Legacy mappings** (FR-032). Read through `ConfigManager`'s public mapping path (`node_mappings`, which resolves `default_mappings.xml` when no project is loaded). Task T002 re-measures that this path loads `default_mappings.xml` with no project selected. If it does not, an upstream report is filed, and continuity is reported as unavailable (`reason: no public path`). It is never read privately.
 - **A `default_mappings.xml` that fails schema validation** (for example a pixel `canvas_region` such as `1920`, outside `[0, 1]`) is reported as such. Continuity is then empty, with the validation message as the reason.
 
 **Rationale.** Principle IV (public paths only, `cuemsutils.xml.__all__ == []`), and FR-002.
@@ -55,7 +55,7 @@ If the state moves again, video is reported degraded (`vc_state_unstable`). Unkn
 
 **Rationale.** These are the contract's client rules ("subscribe, then read; re-read on gap or new pid; never poll get_hardware"). A one-shot CLI that reads once is the opposite of polling.
 
-**Re-measure.** The contract text used here is a scratch copy. Task `T0` diffs it against `cuems-videocomposer` `feat/contract-report` `docs/contract-v1.md` and the VC's `tools/contract/` mock. The mock replies are the source for the VC fixtures (constitution: fixtures valid against the contract).
+**Re-measure.** The contract text used here is a scratch copy. Task T001 diffs it against `cuems-videocomposer` `feat/contract-report` `docs/contract-v1.md` and the VC's `tools/contract/` mock. The mock replies are the source for the VC fixtures (constitution: fixtures valid against the contract).
 
 ## R4. GPU and connector identity from DRM sysfs, even when the VC answers
 
@@ -161,7 +161,7 @@ Check the header and checksum. A bad block gives `sink: unknown`, never a guess.
 - **Layer 2, a client that cannot auto-start.** Use OLA's **Python** client (`ola.OlaClient`). It is a pure-Python socket plus protobuf RPC that only `connect()`s to the address it is given, and it contains no spawn path. The C++ `OlaClientWrapper`, used by `ola_dev_info` and every other `ola_*` tool, auto-starts `olad` by default, so **no `ola_*` binary is ever executed**. Read-only calls only: `FetchPlugins`, `FetchDevices`, `FetchUniverses`.
 - **`python3-ola` is a declared dependency of this package** (maintainer, 2026-10-23), whether or not a DMX device is attached. It is recorded for the Debian `Depends:` when packaging lands, and in the install requirements until then. It can't be a pip dependency, because OLA's Python client is not on PyPI. If the module still cannot be imported, the install is broken: the OLA view is `unknown` (`ola_client_missing_dependency`), DMX falls back to USB candidates, and the log line names the missing dependency. That is degraded, never a silent skip.
 
-**Verify (T0).**
+**Verify (T003).**
 - **Measured 2026-10-23 on two production-testing hosts:** `python3-ola` is at `/usr/lib/python3/dist-packages/ola/`, and `/usr/lib/cuems/bin/python -I` locates `ola` and `ola.OlaClient`. The shared venv therefore sees the system site-packages, and no packaging route is needed beyond declaring the dependency.
 - **Still to do:** read `OlaClient.py` on a host (or in the fork) to confirm it has no spawn path.
 
@@ -196,7 +196,7 @@ Check the header and checksum. A bad block gives `sink: unknown`, never a guess.
 
 **Rationale.** F6 and SC-009.
 
-**Alternatives.** `importlib.metadata` entry points cost a `pyproject` line per class and depend on packaging metadata being installed, so `PYTHONPATH` runs on hosts (quickstart) would not see the probes.
+**Alternatives.** `importlib.metadata` entry points cost a `pyproject` line per class and depend on packaging metadata being installed, so runs from a source tree (tests, `probe --fixture` from a checkout) would not see the probes.
 
 ## R13. Serialisation, determinism and the output contract
 
@@ -250,7 +250,7 @@ The manifest holds the host model (from `/sys/class/dmi/id/{sys_vendor,product_n
 
 **Rationale.** FR-036 to FR-038, and the constitution's "EDID serials are personal-ish data".
 
-**Gate.** Constructed fixtures (hand-built trees) may be used for unit tests. The per-host-model suite is complete only with **recorded** captures from N97/N100, i3-1215U and FP530. It is a **blocking gate** for the feature, not a ledger item that may read "not verified". The captures are taken by connecting **read-only over ssh** to the production-testing machines, **only on a specific request**, at a planned stop in the implementation (task T073). Nothing on those machines is written, installed or restarted. `capture` runs from a checkout via `PYTHONPATH`, and the tree is copied back.
+**Gate.** Constructed fixtures (hand-built trees) may be used for unit tests. The per-host-model suite is complete only with **recorded** captures from N97/N100, i3-1215U and FP530. It is a **blocking gate** for the feature, not a ledger item that may read "not verified". The captures are taken by connecting **read-only over ssh** to the production-testing machines, **only on a specific request**, at a planned stop in the implementation (task T073). Nothing on those machines is written, installed or restarted. The host side is `dev/scripts/capture-readonly.sh`, sent over ssh on stdin, and the workstation side is `cuems-hw-mgr fixture-import`, as described above.
 
 ## R16. `canvas_region` hazard: reproduce the generator, not the schema
 
@@ -273,7 +273,7 @@ This is recorded in the plan's Complexity Tracking, because it touches a `cuems-
 **Decision.**
 - **In scope.** A `pyproject.toml` (setuptools, `src/` layout) with the console script `cuems-hw-mgr = cuemshardwaremanager.cli:main`. The runtime dependencies `pynng` and `cuemsutils` are declared and not bundled (Operating Constraints). `python3-ola` is declared as a system dependency (R10) and documented in `README.md` until the Debian package carries it.
 - **Out of scope.** The Debian package and the systemd units arrive with the units feature.
-- **On hosts, for the ledger.** Run without installing anything: `PYTHONPATH=<checkout>/src /usr/lib/cuems/bin/python -m cuemshardwaremanager probe --json`, as `cuems`. The shared venv is left untouched.
+- **On hosts, for the ledger.** Nothing runs from a checkout on a host. Ledger checks capture with `dev/scripts/capture-readonly.sh` as `cuems-admin` (R15), and run `cuems-hw-mgr probe --json --fixture <dir>` on the workstation against the imported tree (quickstart §2). Hosts and their shared venv are never touched.
 - **The empty placeholder `CuemsHwDiscovery.py` is removed.** The prototype stays in history at `b09b8cc`.
 
 **Rationale.** The shared venv makes packaging a correctness concern, so not installing into it during verification avoids the `pythonosc`-class incident.
